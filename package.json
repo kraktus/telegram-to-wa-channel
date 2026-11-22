@@ -1,0 +1,39 @@
+{
+  "name": "telegram-to-wa-channel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Relay Telegram channel posts into a WhatsApp Channel via Baileys",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "better-sqlite3": "^13.2.0",
+    "dotenv": "^18.0.10",
+    "file-type": "^22.3.0",
+    "grammy": "^1.46.0",
+    "mupdf": "^1.28.6",
+    "pino": "^10.4.0",
+    "qrcode": "^1.5.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.6",
+    "@types/qrcode": "^1.5.6",
+    "pino-pretty": "^13.2.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
