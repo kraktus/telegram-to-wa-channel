@@ -31,7 +31,7 @@ describe('buildOutgoing', () => {
       deps(async () => Buffer.alloc(0))
     )
     expect(outgoing.content).toEqual({
-      text: 'Forwarded from Origin\n\nNewsroom\n\nBody'
+      text: 'Newsroom\n\nBody'
     })
   })
 

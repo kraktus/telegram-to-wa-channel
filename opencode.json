@@ -1,0 +1,15 @@
+{
+  "mcp": {
+    "servers": {
+      "drizzle": {
+        "type": "local",
+        "command": [
+          "pnpm",
+          "exec",
+          "drizzle-kit",
+          "mcp"
+        ]
+      }
+    }
+  }
+}

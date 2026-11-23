@@ -70,6 +70,12 @@ pnpm start
 
 Development: `pnpm dev`. Tests: `pnpm test`. Typecheck: `pnpm typecheck`.
 
+The SQLite schema lives in `src/store/schema.ts` (Drizzle, sync `better-sqlite3` driver).
+Migrations in `drizzle/` are applied automatically when the store opens. After changing the
+schema, run `pnpm db:generate`, review the new SQL, and commit the `drizzle/` folder. For
+`drizzle-kit push`, `pull`, or `studio`, point it at the relay's database:
+`WA_DB_PATH=./relay.db pnpm exec drizzle-kit studio`.
+
 On first start the bot logs `waiting for /start` unless `TG_ADMIN_USER_ID` is set. Press
 **Start** in the bot's DM; the WhatsApp pairing code arrives there automatically. If it
 expires, send `/login`.
@@ -137,7 +143,7 @@ configurable in the env file.
 | Path | Contents | Loss impact |
 |---|---|---|
 | `WA_AUTH_DIR` | Baileys session (`creds.json` + keys) | must re-pair |
-| `WA_DB_PATH` | update offset, last poll time, job queue, message-id map, channel JID + invite cache | queue/offset reset; may re-fetch posts |
+| `WA_DB_PATH` | update offset, last poll time, job queue, message-id map, channel JID + invite cache, Drizzle migration history | queue/offset reset; may re-fetch posts |
 
 Back up both (and the secrets file) before upgrades. The auth directory is a session credential:
 keep it `700`, files `600`, never commit it. `data/` and `.env*` are gitignored.

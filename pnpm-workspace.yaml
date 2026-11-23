@@ -4,3 +4,8 @@ allowBuilds:
   protobufjs: false
 patchedDependencies:
   '@whiskeysockets/baileys@7.0.0-rc14': patches/@whiskeysockets__baileys@7.0.0-rc14.patch
+permissions:
+  drizzle-kit:
+    # The Drizzle installer owns .agents/skills/drizzle; avoid a duplicate
+    # pnpm-managed symlink on every install.
+    skills: false

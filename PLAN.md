@@ -321,7 +321,7 @@ short-lived, which limits exposure.
 | `location` / `venue` | `{ location: { degreesLatitude, degreesLongitude } }` | Venue name/title appended as text |
 | `contact` | `{ contacts: { displayName, contacts: [{ vcard }] } }` | Build vCard from `phone_number` |
 | album (`media_group_id`) | sequential messages, caption on first item | Debounce ~800 ms, then flush as separate posts |
-| forwarded post | prefix `Forwarded from <name>\n\n` | From `forward_origin` |
+| forwarded post | no source prefix | `forward_origin` is captured but intentionally not rendered |
 | `edited_channel_post` | `{ ...content, edit: { remoteJid, id, fromMe: true } }` | Text/caption edits only; queued behind the original send |
 | deleted post | ignored in v1 | Follow-up: WA revoke via stored message key |
 
@@ -399,7 +399,7 @@ src/
     media.ts            # getFile download, size checks, ffmpeg transcode
     groups.ts           # media_group debounce buffer
   store/
-    db.ts               # migrations, job/state queries
+    db.ts               # schema, job/state queries
 test/
   fixtures/             # recorded channel_post JSON
   normalize.test.ts
@@ -489,7 +489,7 @@ LOG_RING_SIZE=1000
 | Path | Contents | If lost |
 |---|---|---|
 | `WA_AUTH_DIR` (`./data/wa-auth`) | Baileys multi-file auth state: `creds.json`, pre-keys, app-state keys, signal sessions. Written by `useMultiFileAuthState`; the directory is created on first run. | The WhatsApp session is gone → re-pair with a fresh code. Treat it like a password. |
-| `WA_DB_PATH` (`./data/relay.db`) | Our SQLite file: Telegram update offset, job queue, idempotency keys, WhatsApp message-id map. Created/migrated on boot. | Relay history/queue state is lost → the offset resets and old posts may be re-fetched or skipped; no re-pairing needed. |
+| `WA_DB_PATH` (`./data/relay.db`) | Our SQLite file: Telegram update offset, job queue, idempotency keys, WhatsApp message-id map. Created on boot. | Relay history/queue state is lost → the offset resets and old posts may be re-fetched or skipped; no re-pairing needed. |
 
 Relative paths resolve from the process working directory; under a supervisor use absolute paths
 (e.g. `/srv/telegram-to-wa-channel/data/...`) owned by the run user. Keep the auth directory `700`
@@ -570,7 +570,7 @@ a real post lands in the existing channel.
 - `config.ts` with zod validation, secrets loaded from the external file, fail-fast errors.
 - `TelegramLogSink` first, wired alongside stdout in a pino multistream: console is immediate,
   Telegram buffers until the DM target is known. Both stay enabled in every mode.
-- SQLite migrations (`state`, `jobs`, `wa_messages`).
+- SQLite schema bootstrap (`state`, `jobs`, `wa_messages`).
 - Bootstrap order: Telegram bot ready → admin user id known (`/start` captured) → start BA socket.
 - Pairing delivery: request code, DM it, replace the previous one, delete on success, cooldown.
 - Graceful shutdown (`SIGINT`/`SIGTERM`): stop polling, finish current job, close socket, close DB.

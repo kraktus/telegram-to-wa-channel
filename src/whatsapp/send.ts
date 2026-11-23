@@ -19,10 +19,8 @@ const MAX_CAPTION = 1024
 const MAX_TEXT = 60_000
 
 function attribution(post: NormalizedPost): string {
-  const lines: string[] = []
-  if (post.forwardedFrom) lines.push(`Forwarded from ${post.forwardedFrom}`)
-  if (post.authorSignature) lines.push(post.authorSignature)
-  return lines.join('\n\n')
+  // Forwarded-source labels are intentionally omitted from channel reposts.
+  return post.authorSignature ?? ''
 }
 
 function composeBody(prefix: string, body?: string): string {

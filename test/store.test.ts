@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import Database from 'better-sqlite3'
 import { Store } from '../src/store/db'
 import type { NormalizedPost } from '../src/types'
 
@@ -40,6 +39,25 @@ describe('Store', () => {
     expect(store.queueDepth()).toBe(2)
     store.close()
   })
+
+  it('round-trips the typed post payload through JSON', () => {
+    const store = makeStore()
+    const original: NormalizedPost = {
+      ...post(1),
+      caption: 'hello',
+      forwardedFrom: 'Origin',
+      mediaGroupId: 'album-1'
+    }
+
+    store.enqueue(original)
+    const job = store.claimNext()
+
+    expect(job?.operation).toBe('send')
+    expect(job?.status).toBe('pending')
+    expect(job?.payload).toEqual(original)
+    store.close()
+  })
+
 
   it('claims jobs in order and marks them done', () => {
     const store = makeStore()
@@ -149,52 +167,4 @@ describe('Store', () => {
     store.close()
   })
 
-  it('migrates a legacy jobs table to support edits', () => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'relay-store-'))
-    directories.push(directory)
-    const dbPath = path.join(directory, 'relay.db')
-
-    const legacy = new Database(dbPath)
-    legacy.exec(`
-      CREATE TABLE state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-      CREATE TABLE jobs (
-        id                INTEGER PRIMARY KEY AUTOINCREMENT,
-        source_chat_id    TEXT NOT NULL,
-        source_message_id INTEGER NOT NULL,
-        payload           TEXT NOT NULL,
-        status            TEXT NOT NULL,
-        attempts          INTEGER NOT NULL DEFAULT 0,
-        next_attempt_at   INTEGER,
-        last_error        TEXT,
-        created_at        INTEGER NOT NULL,
-        UNIQUE (source_chat_id, source_message_id)
-      );
-      CREATE INDEX jobs_status_next ON jobs (status, next_attempt_at);
-      CREATE TABLE wa_messages (
-        source_chat_id    TEXT NOT NULL,
-        source_message_id INTEGER NOT NULL,
-        wa_jid            TEXT NOT NULL,
-        wa_message_id     TEXT NOT NULL,
-        PRIMARY KEY (source_chat_id, source_message_id)
-      );
-    `)
-    legacy
-      .prepare(
-        `INSERT INTO jobs
-           (source_chat_id, source_message_id, payload, status, attempts, created_at)
-         VALUES (?, ?, ?, 'pending', 0, ?)`
-      )
-      .run(post(1).sourceChatId, 1, JSON.stringify(post(1)), Date.now())
-    legacy.close()
-
-    const store = new Store(dbPath)
-    const job = store.claimNext()!
-    expect(job.operation).toBe('send')
-    expect(job.payload.text).toBe('message 1')
-
-    store.markDone(job, '1203630@newsletter', 'WA-1')
-    expect(store.enqueueEdit({ ...post(1), text: 'edited after migration' })).toBe('queued')
-    expect(store.claimNext()?.operation).toBe('edit')
-    store.close()
-  })
 })

@@ -33,7 +33,6 @@ export interface TgChannelPost {
   media_group_id?: string
   author_signature?: string
   forward_origin?: TgForwardOrigin
-  forward_from_chat?: { title?: string; username?: string }
   photo?: TgPhotoSize[]
   video?: TgFile & { duration?: number; width?: number; height?: number }
   animation?: TgFile & { duration?: number; width?: number; height?: number }
@@ -113,23 +112,22 @@ function mediaOf(post: TgChannelPost, kind: PostKind): PostMedia | undefined {
 
 function forwardedFrom(post: TgChannelPost): string | undefined {
   const origin = post.forward_origin
-  if (origin) {
-    switch (origin.type) {
-      case 'channel':
-        return origin.chat?.title ?? origin.chat?.username
-      case 'chat':
-        return origin.sender_chat?.title ?? origin.sender_chat?.username
-      case 'user': {
-        const name = [origin.sender_user?.first_name, origin.sender_user?.last_name]
-          .filter(Boolean)
-          .join(' ')
-        return name || origin.sender_user?.username
-      }
-      case 'hidden_user':
-        return origin.sender_user_name
+  if (!origin) return undefined
+
+  switch (origin.type) {
+    case 'channel':
+      return origin.chat?.title ?? origin.chat?.username
+    case 'chat':
+      return origin.sender_chat?.title ?? origin.sender_chat?.username
+    case 'user': {
+      const name = [origin.sender_user?.first_name, origin.sender_user?.last_name]
+        .filter(Boolean)
+        .join(' ')
+      return name || origin.sender_user?.username
     }
+    case 'hidden_user':
+      return origin.sender_user_name
   }
-  return post.forward_from_chat?.title ?? post.forward_from_chat?.username
 }
 
 function buildVcard(contact: NonNullable<TgChannelPost['contact']>): ContactExtra {
