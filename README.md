@@ -162,8 +162,9 @@ automatically.
 - Albums are relayed as sequential messages, caption on the first.
 - WhatsApp Channels cannot hold documents. **PDFs** are rendered to one JPEG per page and posted in
   order; WhatsApp groups consecutive channel images into an automatic album. Pages carry **no
-  captions** (text on an image breaks the album); the Telegram caption, if any, is posted first as
-  a separate text update, followed by the album. `PDF_MAX_PAGES` (default 30) caps the pages, and a longer
+  captions** (text on an image breaks the album); the PDF title (file name without `.pdf`) and the
+  Telegram caption, if any, are posted first as a separate text update, followed by the album.
+  `PDF_MAX_PAGES` (default 30) caps the pages, and a longer
   PDF gets a truncation notice. Other documents (DOCX, XLSX, …), locations and contacts get a text
   notice with the file name/caption instead, and the job is marked `skipped`.
 - Without `TG_BACKFILL`, the first run starts from the latest Telegram update. `TG_BACKFILL`

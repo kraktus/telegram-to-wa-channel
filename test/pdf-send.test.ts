@@ -83,7 +83,7 @@ function makeClient(pdf: Buffer, maxPages: number) {
 }
 
 describe('PDF posting', () => {
-  it('posts the caption first, then bare images in order', async () => {
+  it('posts the PDF title and caption first, then bare images in order', async () => {
     const { client, sendMessage } = makeClient(makePdf(2), 10)
 
     const result = await client.send(pdfPost())
@@ -91,7 +91,7 @@ describe('PDF posting', () => {
     expect(result).toEqual({ jid: '120363431887786590@newsletter', messageId: 'WA-2' })
     expect(sendMessage).toHaveBeenCalledTimes(3)
 
-    expect(sendMessage.mock.calls[0]?.[1]).toEqual({ text: 'Annual report' })
+    expect(sendMessage.mock.calls[0]?.[1]).toEqual({ text: 'report\n\nAnnual report' })
 
     const first = sendMessage.mock.calls[1]?.[1] as { image: Buffer; caption?: string }
     const second = sendMessage.mock.calls[2]?.[1] as { image: Buffer; caption?: string }
@@ -101,17 +101,27 @@ describe('PDF posting', () => {
     expect(second.caption).toBeUndefined()
   })
 
-  it('does not post a text message when the PDF has no caption', async () => {
+  it('posts the file-name title when the PDF has no caption', async () => {
     const { client, sendMessage } = makeClient(makePdf(2), 10)
 
     await client.send({ ...pdfPost(), caption: undefined })
 
-    expect(sendMessage).toHaveBeenCalledTimes(2)
-    for (const call of sendMessage.mock.calls) {
+    expect(sendMessage).toHaveBeenCalledTimes(3)
+    expect(sendMessage.mock.calls[0]?.[1]).toEqual({ text: 'report' })
+    for (const call of sendMessage.mock.calls.slice(1)) {
       expect(call[1]).toHaveProperty('image')
-      expect(call[1]).not.toHaveProperty('text')
       expect(call[1]).not.toHaveProperty('caption')
     }
+  })
+
+  it('does not repeat the title when it equals the caption', async () => {
+    const { client, sendMessage } = makeClient(makePdf(1), 10)
+
+    await client.send({ ...pdfPost(), caption: 'report' })
+
+    expect(sendMessage).toHaveBeenCalledTimes(2)
+    expect(sendMessage.mock.calls[0]?.[1]).toEqual({ text: 'report' })
+    expect(sendMessage.mock.calls[1]?.[1]).toHaveProperty('image')
   })
 
   it('caps pages and posts a truncation notice afterwards', async () => {
@@ -120,7 +130,7 @@ describe('PDF posting', () => {
     await client.send(pdfPost())
 
     expect(sendMessage).toHaveBeenCalledTimes(4)
-    expect(sendMessage.mock.calls[0]?.[1]).toEqual({ text: 'Annual report' })
+    expect(sendMessage.mock.calls[0]?.[1]).toEqual({ text: 'report\n\nAnnual report' })
     expect(sendMessage.mock.calls[3]?.[1]).toMatchObject({
       text: expect.stringContaining('only the first 2 were posted')
     })

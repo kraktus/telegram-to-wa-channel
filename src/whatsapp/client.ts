@@ -64,6 +64,13 @@ export function isNewsletterUnsupported(kind: NormalizedPost['kind']): boolean {
   return NEWSLETTER_UNSUPPORTED.has(kind)
 }
 
+/** PDF title derived from the uploaded file name. */
+export function pdfTitle(post: NormalizedPost): string | undefined {
+  const name = post.media?.fileName?.trim()
+  if (!name) return undefined
+  return name.replace(/\.pdf$/i, '').trim() || undefined
+}
+
 /** Text posted in place of an attachment a WhatsApp Channel cannot hold. */
 export function newsletterFallbackText(
   post: NormalizedPost,
@@ -710,16 +717,21 @@ export class WhatsAppClient {
 
     let firstMessageId: string | undefined
 
-    // The Telegram text goes first as its own update. Captions on the images
-    // themselves would break the channel's automatic album.
+    // The title (file name without .pdf) and any caption go first as their own
+    // update. Text on the images themselves would break the automatic album.
+    const title = pdfTitle(post)
     const caption = firstMediaCaption(post)
-    if (caption) {
+    const heading = [title, caption && caption !== title ? caption : undefined]
+      .filter((line): line is string => Boolean(line))
+      .join('\n\n')
+
+    if (heading) {
       try {
-        await this.sock.sendMessage(jid, { text: caption })
+        await this.sock.sendMessage(jid, { text: heading })
       } catch (error) {
         this.logger.warn(
           { reason: error instanceof Error ? error.message : String(error) },
-          'could not post the PDF caption'
+          'could not post the PDF heading'
         )
       }
     }
